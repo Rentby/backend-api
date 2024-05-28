@@ -37,7 +37,7 @@ module.exports.getProductList = async (req, res) => {
     snapshot.forEach(doc => {
       const data = doc.data();
       delete data.description;
-      items.push(data);
+      items.push({ id: doc.id, data: data });
     });
     res.json(items);
   } catch (error) {
@@ -102,7 +102,7 @@ module.exports.sellerDetail = async (req, res) => {
     }
     const data = doc.data();
     delete data.seller_id;
-    res.json(data);
+    res.json({ id: doc.id, data: doc.data() });
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ error: 'Internal Server Error' });
