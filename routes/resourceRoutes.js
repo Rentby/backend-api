@@ -6,7 +6,7 @@ const validateResource = require('../middleware/validation');
 
 // Main API
 router.post('/user-register', checkApiKey, resourceController.registerUser);
-router.get('/user-detail/:id', checkApiKey, resourceController.userDetail);
+router.get('/user-detail/:email', checkApiKey, resourceController.userDetail);
 router.get('/product-list', checkApiKey, resourceController.getProductList);
 router.get('/order-product-list/', checkApiKey, resourceController.getOrderProductList);
 router.get('/rating/:id', checkApiKey, resourceController.getRatingByProductId);
@@ -17,6 +17,5 @@ router.get('/active-order/:id', checkApiKey, resourceController.activeOrderById)
 // Suggestion API
 router.post('/product', checkApiKey, resourceController.addProduct);
 router.post('/seller', checkApiKey, resourceController.addSeller);
-
 
 module.exports = router;
