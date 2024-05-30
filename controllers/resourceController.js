@@ -77,15 +77,16 @@ module.exports.getRatingByProductId = async (req, res) => {
   }
 };
 
-// Mendapatkan detail dari user by id
+// Mendapatkan detail dari user by email
 module.exports.userDetail = async (req, res) => {
   try {
-    const { id } = req.params;
-    const doc = await db.collection('users').doc(id).get();
-    if (!doc.exists) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    res.json({ id: doc.id, data: doc.data() });
+    const { email } = req.params;
+    const snapshot = await db.collection("users").where("email", "==", email).get()
+    const items = [];
+    snapshot.forEach(doc => {
+      items.push({ id: doc.id, data: doc.data() });
+    });
+    res.json(items);
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ error: 'Internal Server Error' });
