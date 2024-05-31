@@ -1,5 +1,7 @@
 const admin = require('firebase-admin');
 const serviceAccount = require('./serviceAccountKey.json'); // Gantilah dengan path ke file kunci layanan Anda
+const { v4: uuidv4 } = require('uuid'); // Import UUID
+const uid = uuidv4();
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
@@ -64,12 +66,30 @@ const dummyOrder = [
   }
 ];
 
+const dummyOrderProduct = [
+  {
+    product_id: "77462fda-d119-47d1-ba74-d794f60ef7ef",
+    start: admin.firestore.Timestamp.fromDate(now),
+    end: admin.firestore.Timestamp.fromDate(bookingEndDate),
+  }
+];
+
+const dummyRating = [
+  {
+    customer_name: "John",
+    description: "Bagus",
+    product_id: "77462fda-d119-47d1-ba74-d794f60ef7ef",
+    star: "5",
+    created_at: admin.firestore.Timestamp.now(),
+  }
+];
+
 // Fungsi untuk menambahkan data dummy
 const addDummyData = async () => {
   const batch = db.batch();
 
-  dummyProduct.forEach((data, index) => {
-    const docRef = db.collection('products').doc();
+  dummyRating.forEach((data, index) => {
+    const docRef = db.collection('rating').doc(uid);
     batch.set(docRef, data);
   });
 
