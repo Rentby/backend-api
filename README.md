@@ -10,5 +10,3 @@
 ```bash
 npm install 
 ```
-Add serviceAccountKey.json from google cloud \
-Add .env configuration for API_KEY
