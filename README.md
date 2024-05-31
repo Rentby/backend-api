@@ -10,3 +10,10 @@
 ```bash
 npm install 
 ```
+▶ Run
+```bash
+npm run start 
+```
+```bash
+npm run dev 
+```
