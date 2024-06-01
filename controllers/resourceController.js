@@ -10,7 +10,17 @@ module.exports.registerUser = async (req, res) => {
     if (!name || !phone_number || !address || !email) {
       return res.status(400).json({ error: 'Name, phone number, email and address are required' });
     }
-    
+
+    const checkEmail = await db.collection('users').where('email', '==', email).get()
+    const items = [];
+    checkEmail.forEach(doc => {
+      items.push(doc.data())
+    })
+
+    if(items.length !== 0){
+      return res.status(400).json({ error: 'Email sudah terdaftar, silahkan gunakan email lainnya' });
+    }
+
     // Data disimpan ke firestore
     const userData = {
       name: name,
@@ -81,10 +91,10 @@ module.exports.getRatingByProductId = async (req, res) => {
 module.exports.userDetail = async (req, res) => {
   try {
     const { email } = req.params;
-    const snapshot = await db.collection("users").where("email", "==", email).get()
-    const items = [];
-    snapshot.forEach(doc => {
-      items.push({ id: doc.id, data: doc.data() });
+    const querySnapshot = await db.collection("users").where("email", "==", email).get()
+    let items;
+    querySnapshot.forEach(doc => {
+      items = {id: doc.id, data: doc.data()};
     });
     res.json(items);
   } catch (error) {
@@ -197,6 +207,23 @@ module.exports.addSeller = async (req, res) => {
 
     // Mengembalikan respons dengan ID dokumen yang baru dibuat
     res.status(201).json({ id: uid });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+// Mendapatkan semua data seller
+module.exports.getAllSeller = async (req, res) => {
+  try {
+    const snapshot = await db.collection('sellers').where("product_amount", "==", 0).get();
+    const items = [];
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      delete data.description;
+      items.push({ id: doc.id, data: data });
+    });
+    res.json(items);
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ error: 'Internal Server Error' });

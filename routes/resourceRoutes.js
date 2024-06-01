@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const resourceController = require('../controllers/resourceController');
 const checkApiKey = require('../middleware/checkApiKey');
-const validateResource = require('../middleware/validation');
 
 // Main API
 router.post('/user-register', checkApiKey, resourceController.registerUser);
@@ -17,5 +16,6 @@ router.get('/active-order/:id', checkApiKey, resourceController.activeOrderById)
 // Suggestion API
 router.post('/product', checkApiKey, resourceController.addProduct);
 router.post('/seller', checkApiKey, resourceController.addSeller);
+router.get('/seller', checkApiKey, resourceController.getAllSeller);
 
 module.exports = router;
