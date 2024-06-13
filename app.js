@@ -7,6 +7,7 @@ const corsOptions = require('./config/corsOptions');
 const logger = require('./utils/logger');
 const errorHandler = require('./middleware/errorHandler');
 const resourceRoutes = require('./routes/resourceRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
 const rateLimit = require('express-rate-limit');
 const limiter = rateLimit({
   windowMs: 5 * 60 * 1000, // Dalam 5 menit
@@ -22,9 +23,14 @@ app.use(express.json());
 app.use(limiter);
 
 app.use('/api', resourceRoutes);
+app.use('/api/payment', paymentRoutes)
 app.get('/', (req, res) => {
   res.send('<h1>Response Success</h1>');
 });
+
+// app.get('/api/payment/finish', (req, res) => {
+//   res.send('<h1>Pembayaran Berhasil</h1>');
+// });
 
 app.use(errorHandler);
 
