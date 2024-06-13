@@ -80,7 +80,7 @@ module.exports.getRatingByProductId = async (req, res) => {
     snapshot.forEach(doc => {
       items.push({ id: doc.id, data: doc.data() });
     });
-    res.json(items);
+    res.json(items[0].data);
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ error: 'Internal Server Error' });
@@ -96,7 +96,7 @@ module.exports.userDetail = async (req, res) => {
     querySnapshot.forEach(doc => {
       items = {id: doc.id, data: doc.data()};
     });
-    res.json(items);
+    res.json(items.data);
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ error: 'Internal Server Error' });
@@ -107,13 +107,13 @@ module.exports.userDetail = async (req, res) => {
 module.exports.sellerDetail = async (req, res) => {
   try {
     const { id } = req.params;
-    const doc = await db.collection('sellers').doc(id).get();
+    const doc = await db.collection('seller').doc(id).get();
     if (!doc.exists) {
       return res.status(404).json({ error: 'Seller not found' });
     }
     const data = doc.data();
     delete data.seller_id;
-    res.json({ id: doc.id, data: doc.data() });
+    res.json(data);
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ error: 'Internal Server Error' });
@@ -128,8 +128,10 @@ module.exports.productDetail = async (req, res) => {
     if (!doc.exists) {
       return res.status(404).json({ error: 'Product not found' });
     }
-    delete doc.user_id;
-    res.json({ id: doc.id, data: doc.data() });
+    const data = doc.data();
+    delete data.cosplay;
+    delete data.hiking;
+    res.json(data);
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ error: 'Internal Server Error' });
@@ -213,17 +215,75 @@ module.exports.addSeller = async (req, res) => {
   }
 };
 
-// Mendapatkan semua data seller
-module.exports.getAllSeller = async (req, res) => {
+// Get All Seller
+module.exports.getAllSellerProduct = async (req, res) => {
   try {
-    const snapshot = await db.collection('sellers').where("product_amount", "==", 0).get();
+    const { id } = req.params
+    const snapshot = await db.collection('products').where("seller_id", "==", id).get();
     const items = [];
     snapshot.forEach(doc => {
       const data = doc.data();
       delete data.description;
-      items.push({ id: doc.id, data: data });
+      items.push(data);
     });
     res.json(items);
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+
+// Get Product by Rating
+module.exports.getProductByRating = async (req, res) => {
+  try {
+    const { rating } = req.params;
+    const snapshot = await db.collection('products').where("rating", "==", rating+'f').get();
+    const items = [];
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      delete data.description;
+      items.push(data);
+    });
+    res.json(items[0].data);
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+// Post Order Estimate
+module.exports.postOrderEstimate = async (req, res) => {
+  try {
+    const { product_id, rent_start, rent_end, rent_length } = req.body;
+    const docRef = db.collection('products').doc(product_id);
+    const doc = await docRef.get();
+
+    if (!doc.exists) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    const productData = doc.data();
+
+    const calculateRent = (rent_price, rent_length) => {
+      return rent_price * rent_length;
+    };
+
+    const total_rent = calculateRent(productData.rent_price, rent_length);
+
+    const orderEstimate = {
+      product_id: product_id,
+      product_name: productData.product_name,
+      rent_price: productData.rent_price,
+      rent_start: rent_start,
+      rent_end: rent_end,
+      rent_total: total_rent,
+      service_fee: 1000,
+      deposit: productData.rent_price * 0.1,
+      order_total: total_rent + 1000 + productData.rent_price * 0.1, // Total order includes service fee and deposit
+    };
+
+    res.json(orderEstimate);
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ error: 'Internal Server Error' });
