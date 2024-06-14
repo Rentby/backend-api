@@ -5,15 +5,21 @@
 ### 📂 [Database](https://console.firebase.google.com/project/rent-by/firestore/databases/-default-/data/~2Fusers)
 
 ##
+Configuration is required for .env and serviceAccountKey.json
+
 \
 🛠️ Install Dependencies    
 ```bash
 npm install 
 ```
-▶ Run
+
+##
+
+▶ Run Production
 ```bash
 npm run start 
 ```
+▶ Run Development
 ```bash
 npm run dev 
 ```
