@@ -1,5 +1,5 @@
 const corsOptions = {
-    origin: 'http://localhost:3000', // domain yang diizinkan
+    origin: 'http://localhost:3000', // permitted domains
     optionsSuccessStatus: 200
 };
   
