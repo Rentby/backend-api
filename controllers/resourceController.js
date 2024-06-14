@@ -2,13 +2,12 @@ const db = require('../config/firestore');
 const { v4: uuidv4 } = require('uuid'); // Import UUID
 const uid = uuidv4();
 
-// Menambahkan user baru
-module.exports.registerUser = async (req, res) => {
+// Add new user
+module.exports.postRegisterUser = async (req, res) => {
   try {
     const { name, phone_number, address, email } = req.body;
-    // Validasi data
     if (!name || !phone_number || !address || !email) {
-      return res.status(400).json({ error: 'Name, phone number, email and address are required' });
+      return res.status(400).json({ error: 'Missing required params (name, phone_number, address, email)' });
     }
 
     const checkEmail = await db.collection('users').where('email', '==', email).get()
@@ -18,10 +17,9 @@ module.exports.registerUser = async (req, res) => {
     })
 
     if(items.length !== 0){
-      return res.status(400).json({ error: 'Email sudah terdaftar, silahkan gunakan email lainnya' });
+      return res.status(400).json({ error: 'Email has been registered, please use another email' });
     }
 
-    // Data disimpan ke firestore
     const userData = {
       name: name,
       phone_number: phone_number,
@@ -30,8 +28,6 @@ module.exports.registerUser = async (req, res) => {
     };
 
     await db.collection('users').doc(uid).set(userData);
-
-    // Mengembalikan respons dengan ID dokumen yang baru dibuat
     res.status(201).json({ id: uid });
   } catch (error) {
     console.error('Error:', error);
@@ -39,30 +35,13 @@ module.exports.registerUser = async (req, res) => {
   }
 };
 
-// Mendapatkan semua product list
-module.exports.getProductList = async (req, res) => {
-  try {
-    const snapshot = await db.collection('products').get();
-    const items = [];
-    snapshot.forEach(doc => {
-      const data = doc.data();
-      delete data.description;
-      items.push({ id: doc.id, data: data });
-    });
-    res.json(items);
-  } catch (error) {
-    console.error('Error:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
-};
-
-// Mendapatkan semua orderan product list
+// Get all product list orders
 module.exports.getOrderProductList = async (req, res) => {
   try {
     const snapshot = await db.collection('order-product-list').get();
     const items = [];
     snapshot.forEach(doc => {
-      items.push({ id: doc.id, data: doc.data() });
+      items.push(doc.data());
     });
     res.json(items);
   } catch (error) {
@@ -71,10 +50,14 @@ module.exports.getOrderProductList = async (req, res) => {
   }
 };
 
-// Mendapatkan rating sesuai dengan product id
+// Get a rating according to the product_id
 module.exports.getRatingByProductId = async (req, res) => {
   try {
     const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ error: 'Missing required params (id)' });
+    }
+    
     const snapshot = await db.collection("rating").where("product_id", "==", id).get()
     const items = [];
     snapshot.forEach(doc => {
@@ -87,10 +70,13 @@ module.exports.getRatingByProductId = async (req, res) => {
   }
 };
 
-// Mendapatkan detail dari user by email
-module.exports.userDetail = async (req, res) => {
+// Get details from user by email
+module.exports.getUserDetail = async (req, res) => {
   try {
     const { email } = req.params;
+    if (!email) {
+      return res.status(400).json({ error: 'Missing required params (email)' });
+    }
     const querySnapshot = await db.collection("users").where("email", "==", email).get()
     let items;
     querySnapshot.forEach(doc => {
@@ -103,10 +89,14 @@ module.exports.userDetail = async (req, res) => {
   }
 };
 
-// Mendapatkan detail seller by id
-module.exports.sellerDetail = async (req, res) => {
+// Get seller details by id
+module.exports.getSellerDetail = async (req, res) => {
   try {
     const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ error: 'Missing required params (id)' });
+    }
+    
     const doc = await db.collection('seller').doc(id).get();
     if (!doc.exists) {
       return res.status(404).json({ error: 'Seller not found' });
@@ -120,10 +110,14 @@ module.exports.sellerDetail = async (req, res) => {
   }
 };
 
-// Mendapatkan detail products by id
-module.exports.productDetail = async (req, res) => {
+// Get product details by id
+module.exports.getProductDetail = async (req, res) => {
   try {
     const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ error: 'Missing required params (id)' });
+    }
+
     const doc = await db.collection('products').doc(id).get();
     if (!doc.exists) {
       return res.status(404).json({ error: 'Product not found' });
@@ -131,6 +125,13 @@ module.exports.productDetail = async (req, res) => {
     const data = doc.data();
     delete data.cosplay;
     delete data.hiking;
+
+    // Change rent_price to integer if it exists
+    if (data.rent_price) {
+      const parsedRentPrice = parseInt(data.rent_price.toString().replace(/,/g, ''), 10);
+      data.rent_price = isNaN(parsedRentPrice) ? 0 : parsedRentPrice;
+    }
+
     res.json(data);
   } catch (error) {
     console.error('Error:', error);
@@ -138,10 +139,14 @@ module.exports.productDetail = async (req, res) => {
   }
 };
 
-// Mendapatkan active order by id
-module.exports.activeOrderById = async (req, res) => {
+// Get active orders by ID
+module.exports.getActiveOrderById = async (req, res) => {
   try {
     const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ error: 'Missing required params (id)' });
+    }
+
     const snapshot = await db.collection("active-order").where("user_id", "==", id).get()
     const items = [];
     snapshot.forEach(doc => {
@@ -157,17 +162,14 @@ module.exports.activeOrderById = async (req, res) => {
 
 // API Suggestion
 
-
-// Menambahkan data product baru
+// Added new product data
 module.exports.addProduct = async (req, res) => {
   try {
     const { product_name, description, rent_price, url_photo, seller_id } = req.body;
-    // Validasi data
     if (!product_name || !description || !rent_price || !url_photo || !seller_id) {
-      return res.status(400).json({ error: 'Name Product, description, rent price, url photo, and seller id are required' });
+      return res.status(400).json({ error: 'Missing required fields (product_name, description, rent_price, url_photo, seller_id)' });
     }
 
-    // Data disimpan ke firestore
     const productData = {
       product_name: product_name,
       description: description,
@@ -177,8 +179,6 @@ module.exports.addProduct = async (req, res) => {
     };
 
     await db.collection('products').doc(uid).set(productData);
-
-    // Mengembalikan respons dengan ID dokumen yang baru dibuat
     res.status(201).json({ id: uid });
   } catch (error) {
     console.error('Error:', error);
@@ -186,16 +186,14 @@ module.exports.addProduct = async (req, res) => {
   }
 };
 
-// Menambahkan data seller baru
+// Added new seller data
 module.exports.addSeller = async (req, res) => {
   try {
     const { name, phone_number, address, wa_number, product_amount } = req.body;
-    // Validasi data
     if (!name || !phone_number || !address || !wa_number || !product_amount) {
-      return res.status(400).json({ error: 'Name Product, phone number, address, wa number, and product amount are required' });
+      return res.status(400).json({ error: 'Missing required fields (name, phone_number, address, wa_number, product_amount)' });
     }
 
-    // Data disimpan ke firestore
     const sellerData = {
       name: name,
       phone_number: phone_number,
@@ -204,10 +202,7 @@ module.exports.addSeller = async (req, res) => {
       product_amount: product_amount
     };
 
-    // Save the document with UUID as the document ID
     await db.collection('sellers').doc(uid).set(sellerData);
-
-    // Mengembalikan respons dengan ID dokumen yang baru dibuat
     res.status(201).json({ id: uid });
   } catch (error) {
     console.error('Error:', error);
@@ -215,15 +210,24 @@ module.exports.addSeller = async (req, res) => {
   }
 };
 
-// Get All Seller
+// Get All Seller Product by id
 module.exports.getAllSellerProduct = async (req, res) => {
   try {
     const { id } = req.params
+    if (!id) {
+      return res.status(400).json({ error: 'Missing required params (id)' });
+    }
+
     const snapshot = await db.collection('products').where("seller_id", "==", id).get();
     const items = [];
     snapshot.forEach(doc => {
       const data = doc.data();
       delete data.description;
+
+      if (data.rent_price) {
+        const parsedRentPrice = parseInt(data.rent_price.toString().replace(/,/g, ''), 10);
+        data.rent_price = isNaN(parsedRentPrice) ? 0 : parsedRentPrice;  
+      }
       items.push(data);
     });
     res.json(items);
@@ -238,6 +242,10 @@ module.exports.getAllSellerProduct = async (req, res) => {
 module.exports.getProductByRating = async (req, res) => {
   try {
     const { rating } = req.params;
+    if (!rating) {
+      return res.status(400).json({ error: 'Missing required params (rating)' });
+    }
+
     const snapshot = await db.collection('products').where("rating", "==", rating+'f').get();
     const items = [];
     snapshot.forEach(doc => {
@@ -256,18 +264,26 @@ module.exports.getProductByRating = async (req, res) => {
 module.exports.postOrderEstimate = async (req, res) => {
   try {
     const { product_id, rent_start, rent_end, rent_length } = req.body;
+    if (!product_id || !rent_start || !rent_end || !rent_length) {
+      return res.status(400).json({ error: 'Missing required fields (product_id, rent_start, rent_end, rent_length)' });
+    }
+
     const docRef = db.collection('products').doc(product_id);
     const doc = await docRef.get();
-
     if (!doc.exists) {
       return res.status(404).json({ error: 'Product not found' });
     }
 
-    const productData = doc.data();
+    let productData = doc.data();
 
     const calculateRent = (rent_price, rent_length) => {
       return rent_price * rent_length;
     };
+
+    if (productData.rent_price) {
+      const parsedRentPrice = parseInt(productData.rent_price.toString().replace(/,/g, ''), 10);
+      productData.rent_price = isNaN(parsedRentPrice) ? 0 : parsedRentPrice; 
+    }
 
     const total_rent = calculateRent(productData.rent_price, rent_length);
 
@@ -279,11 +295,35 @@ module.exports.postOrderEstimate = async (req, res) => {
       rent_end: rent_end,
       rent_total: total_rent,
       service_fee: 1000,
-      deposit: productData.rent_price * 0.1,
-      order_total: total_rent + 1000 + productData.rent_price * 0.1, // Total order includes service fee and deposit
+      deposit: parseInt((total_rent * 0.1).toString().replace(/,/g, ''), 10),
+      order_total: parseInt((total_rent + 1000 + productData.rent_price * 0.1).toString().replace(/,/g, ''), 10),
     };
 
     res.json(orderEstimate);
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+// Get the product according to the seller id
+module.exports.getProductBySellerId = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ error: 'Missing required params (id)' });
+    }
+
+    const snapshot = await db.collection("products").where("seller_id", "==", id).get()
+  
+    const items = [];
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      delete data.cosplay;
+      delete data.hiking;
+      items.push(data);
+    });
+    res.json(items);
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ error: 'Internal Server Error' });
