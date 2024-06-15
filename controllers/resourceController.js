@@ -43,7 +43,7 @@ module.exports.getOrderProductList = async (req, res) => {
     snapshot.forEach(doc => {
       items.push(doc.data());
     });
-    res.json(items);
+    res.status(200).json(items);
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ error: 'Internal Server Error' });
@@ -63,7 +63,7 @@ module.exports.getRatingByProductId = async (req, res) => {
     snapshot.forEach(doc => {
       items.push({ id: doc.id, data: doc.data() });
     });
-    res.json(items[0].data);
+    res.status(200).json(items[0].data);
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ error: 'Internal Server Error' });
@@ -82,7 +82,7 @@ module.exports.getUserDetail = async (req, res) => {
     querySnapshot.forEach(doc => {
       items = {id: doc.id, data: doc.data()};
     });
-    res.json(items.data);
+    res.status(200).json(items.data);
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ error: 'Internal Server Error' });
@@ -103,7 +103,7 @@ module.exports.getSellerDetail = async (req, res) => {
     }
     const data = doc.data();
     delete data.seller_id;
-    res.json(data);
+    res.status(200).json(data);
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ error: 'Internal Server Error' });
@@ -132,7 +132,7 @@ module.exports.getProductDetail = async (req, res) => {
       data.rent_price = isNaN(parsedRentPrice) ? 0 : parsedRentPrice;
     }
 
-    res.json(data);
+    res.status(200).json(data);
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ error: 'Internal Server Error' });
@@ -152,7 +152,7 @@ module.exports.getActiveOrderById = async (req, res) => {
     snapshot.forEach(doc => {
       items.push({ id: doc.id, data: doc.data() });
     });
-    res.json(items);
+    res.status(200).json(items);
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ error: 'Internal Server Error' });
@@ -230,7 +230,7 @@ module.exports.getAllSellerProduct = async (req, res) => {
       }
       items.push(data);
     });
-    res.json(items);
+    res.status(200).json(items);
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ error: 'Internal Server Error' });
@@ -253,7 +253,7 @@ module.exports.getProductByRating = async (req, res) => {
       delete data.description;
       items.push(data);
     });
-    res.json(items[0].data);
+    res.status(200).json(items[0].data);
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ error: 'Internal Server Error' });
@@ -299,7 +299,7 @@ module.exports.postOrderEstimate = async (req, res) => {
       order_total: parseInt((total_rent + 1000 + productData.rent_price * 0.1).toString().replace(/,/g, ''), 10),
     };
 
-    res.json(orderEstimate);
+    res.status(200).json(orderEstimate);
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ error: 'Internal Server Error' });
@@ -323,7 +323,7 @@ module.exports.getProductBySellerId = async (req, res) => {
       delete data.hiking;
       items.push(data);
     });
-    res.json(items);
+    res.status(200).json(items);
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ error: 'Internal Server Error' });

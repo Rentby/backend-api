@@ -1,15 +1,15 @@
 const { redisClientSearch, redisClientDatabase } = require('../config/redisConfig'); // Import file konfigurasi
 
-  
+// Get data for Search Bar
 module.exports.searchBar = async (req, res) => {
-    const clientSearch = await redisClientSearch();
-
-    const { query, limit } = req.query;
-    if (!query || !limit) {
-      return res.status(400).send('Missing required query (query, limit)');
-    }
-  
     try {
+        const clientSearch = await redisClientSearch();
+    
+        const { query, limit } = req.query;
+        if (!query || !limit) {
+          return res.status(400).send('Missing required query (query, limit)');
+        }
+      
         const results = await clientSearch.ft.search('idx:product', `${query}*`, {
             SORTBY: "$.length",
             SORTASC: true,
@@ -28,23 +28,24 @@ module.exports.searchBar = async (req, res) => {
     }
 };
 
-module.exports.getSearch = async (req, res) => {
-    const clientData = await redisClientDatabase();
-    
-    const { query } = req.query;
-    let { limit = 5, offset = 0 } = req.query;
-
-    if (!query || !limit || !offset) {
-        return res.status(400).send('Missing required query (query, limit, offset)');
-    }
-
-    limit = parseInt(limit, 10);
-    offset = parseInt(offset, 10);
-    if (isNaN(limit) || isNaN(offset)) {
-        return res.status(400).send('Limit and offset must be valid numbers');
-    }
-
+// Get data after search
+module.exports.getSearch = async (req, res) => { 
     try {
+        const clientData = await redisClientDatabase();
+        
+        const { query } = req.query;
+        let { limit = 5, offset = 0 } = req.query;
+    
+        if (!query || !limit || !offset) {
+            return res.status(400).send('Missing required query (query, limit, offset)');
+        }
+    
+        limit = parseInt(limit, 10);
+        offset = parseInt(offset, 10);
+        if (isNaN(limit) || isNaN(offset)) {
+            return res.status(400).send('Limit and offset must be valid numbers');
+        }
+
         const results = await clientData.ft.search('idx:product-data', `${query}*`, {
             SORTBY: "$.product_name",
             SORTASC: true,
@@ -77,24 +78,25 @@ module.exports.getSearch = async (req, res) => {
     }
 };
 
-module.exports.searchByCategory = async (req, res) => {
-    const clientData = await redisClientDatabase();
-    
-    const { category } = req.query;
-    let { limit = 5, offset = 0 } = req.query;
-
-    if (!category || !limit || !offset) {
-        return res.status(400).send('Missing required query (category, limit, offset)');
-    }
-    
-    limit = parseInt(limit, 10);
-    offset = parseInt(offset, 10);
-
-    if (!['cosplay', 'hiking'].includes(category)) {
-        return res.status(400).json({ error: 'Invalid category' });
-    }
-
+// Get search by category
+module.exports.searchByCategory = async (req, res) => {  
     try {
+        const clientData = await redisClientDatabase();
+        
+        const { category } = req.query;
+        let { limit = 5, offset = 0 } = req.query;
+    
+        if (!category || !limit || !offset) {
+            return res.status(400).send('Missing required query (category, limit, offset)');
+        }
+        
+        limit = parseInt(limit, 10);
+        offset = parseInt(offset, 10);
+    
+        if (!['cosplay', 'hiking'].includes(category)) {
+            return res.status(400).json({ error: 'Invalid category' });
+        }
+
         const results = await clientData.ft.search('idx:product-data', `${category}*`, {
             SORTBY: "$."+category,
             SORTASC: true,

@@ -13,21 +13,22 @@ const snap = new midtransClient.Snap({
     serverKey: MIDTRANS_SERVER_KEY
 });
 
+// Get Order Status by orderId
 module.exports.getOrderStatus = async (req, res) => {
-
-    const { orderId } = req.params;
-    const url = `https://api.sandbox.midtrans.com/v2/${orderId}/status`;
-    if (!orderId) {
-        return res.status(400).json({ error: 'Missing required params (orderId)' });
-    }
     try {
+        const { orderId } = req.params;
+        const url = `https://api.sandbox.midtrans.com/v2/${orderId}/status`;
+        if (!orderId) {
+            return res.status(400).json({ error: 'Missing required params (orderId)' });
+        }
+
         const response = await axios.get(url, {
             headers: {
                 'Authorization': `Basic ${Buffer.from(MIDTRANS_SERVER_KEY + ':').toString('base64')}`,
                 'Content-Type': 'application/json'
             }
         });
-        res.json(response.data);
+        res.status(200).json(response.data);
     } catch (error) {
         console.error(error);
         res.status(error.response ? error.response.status : 500).json({
@@ -37,11 +38,13 @@ module.exports.getOrderStatus = async (req, res) => {
     }
 };
 
+// Create Transaction Token using Midtrans
 module.exports.createTransaction = async (req, res) => {
     const {name, price, product, email} = req.body
     if (!name || !price || !product || !email) {
         return res.status(400).json({ error: 'Missing required fields (name, price, product, email)' });
     }
+
     const parameter = {
         transaction_details: {
             order_id: uid,
@@ -69,20 +72,20 @@ module.exports.createTransaction = async (req, res) => {
    
     snap.createTransaction(parameter)
         .then((transaction) => {
-        res.json({ token: transaction.token, orderId: parameter.transaction_details.order_id });
+        res.status(201).json({ token: transaction.token, orderId: parameter.transaction_details.order_id });
     });
 
 };
 
-// Menambahkan order baru
+// Create new order
 module.exports.postOrder = async (req, res) => {
-    const { order_id, product_id, user_id, rent_start, rent_end } = req.body;
-    const url = `https://api.sandbox.midtrans.com/v2/${order_id}/status`;
-    if (!order_id || !product_id || !user_id || !rent_start || !rent_end) {
-        return res.status(400).json({ error: 'Missing required fields (order_id, product_id, user_id, rent_start, rent_end)' });
-    }
-
     try {
+        const { order_id, product_id, user_id, rent_start, rent_end } = req.body;
+        const url = `https://api.sandbox.midtrans.com/v2/${order_id}/status`;
+        if (!order_id || !product_id || !user_id || !rent_start || !rent_end) {
+            return res.status(400).json({ error: 'Missing required fields (order_id, product_id, user_id, rent_start, rent_end)' });
+        }
+
         const midtransStatus = await axios.get(url, {
             headers: {
                 'Authorization': `Basic ${Buffer.from(MIDTRANS_SERVER_KEY + ':').toString('base64')}`,
@@ -118,7 +121,6 @@ module.exports.postOrder = async (req, res) => {
           };
         const mid = midtransStatus.data
 
-        // Store data to firestore
         const paymentData = {
             status: checkStatusPayment(mid.transaction_status),
             order_time: mid.transaction_time,
@@ -145,8 +147,15 @@ module.exports.postOrder = async (req, res) => {
             lateDuration: "",
             lateChange: "",
         };
+
+        const activeOrder = {
+            product_id: product_id,
+            rent_start: rent_start,
+            rent_end: rent_end,
+        }
   
         await db.collection('payment-data').doc(order_id).set(paymentData);
+        await db.collection('order-product-list').doc(uid).set(activeOrder);
         res.status(201).json({ id: order_id });
     } catch (error) {
         console.error('Error:', error);
@@ -154,10 +163,10 @@ module.exports.postOrder = async (req, res) => {
     }
   };
 
+// Get Order Details by id
 module.exports.getOrder = async (req, res) => {
-    const { id } = req.params;
-
     try {
+        const { id } = req.params;
         if (!id ) {
             return res.status(400).json({ error: 'Missing required params (id)' });
         }
@@ -173,4 +182,25 @@ module.exports.getOrder = async (req, res) => {
         console.error('Error:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
-  };
+};
+
+// Get Booked Date by product id
+module.exports.getBookedDate = async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (!id ) {
+            return res.status(400).json({ error: 'Missing required params (id)' });
+        }
+
+        const snapshot = await db.collection("order-product-list").where("user_id", "==", id).get()
+        const items = [];
+        snapshot.forEach(doc => {
+          items.push(doc.data());
+        });
+
+        res.status(201).json(items);
+    } catch (error) {
+        console.error('Error:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
