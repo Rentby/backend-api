@@ -8,10 +8,11 @@ const logger = require('./utils/logger');
 const errorHandler = require('./middleware/errorHandler');
 const resourceRoutes = require('./routes/resourceRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
+const machineLearningRoutes = require('./routes/machineLearningRoutes');
 const rateLimit = require('express-rate-limit');
 const limiter = rateLimit({
-  windowMs: 5 * 60 * 1000, // Dalam 5 menit
-  max: 100, // maksimal 100 permintaan
+  windowMs: 5 * 60 * 1000, // In 5 Minutes
+  max: 1000, // Max 1000 Response
 });
 
 const app = express();
@@ -22,15 +23,19 @@ app.use(logger);
 app.use(express.json());
 app.use(limiter);
 
+// Resource Routes
 app.use('/api', resourceRoutes);
+
+// Payment Routes
 app.use('/api/payment', paymentRoutes)
+
+// Machine Learning Routes
+app.use('/api', machineLearningRoutes)
+
+// Base URL Response
 app.get('/', (req, res) => {
   res.send('<h1>Response Success</h1>');
 });
-
-// app.get('/api/payment/finish', (req, res) => {
-//   res.send('<h1>Pembayaran Berhasil</h1>');
-// });
 
 app.use(errorHandler);
 
