@@ -21,6 +21,7 @@ module.exports.searchBar = async (req, res) => {
             return rest;
         })
 
+        clientSearch.disconnect()
         res.status(200).json(filteredResults);
     } catch (err) {
       console.error('Error searching items: ', err);
@@ -34,17 +35,20 @@ module.exports.getSearch = async (req, res) => {
         const clientData = await redisClientDatabase();
         
         const { query } = req.query;
-        let { limit = 5, offset = 0 } = req.query;
+        let { page = 1 } = req.query;
     
-        if (!query || !limit || !offset) {
-            return res.status(400).send('Missing required query (query, limit, offset)');
+        if (!query || !page) {
+            return res.status(400).send('Missing required query (query, page)');
         }
     
-        limit = parseInt(limit, 10);
-        offset = parseInt(offset, 10);
-        if (isNaN(limit) || isNaN(offset)) {
-            return res.status(400).send('Limit and offset must be valid numbers');
+        limit = parseInt(30, 10);
+        page = parseInt(page, 10);
+
+        if (isNaN(limit) || isNaN(page) || page < 1) {
+            return res.status(400).send('Invalid limit or page number');
         }
+
+        const offset = (page - 1) * limit;
 
         const results = await clientData.ft.search('idx:product-data', `${query}*`, {
             SORTBY: "$.product_name",
@@ -65,13 +69,18 @@ module.exports.getSearch = async (req, res) => {
             };
         });
         
+        clientData.disconnect()
         const hasMore = results.total > offset + limit;
 
         res.status(200).json({ 
             results: filteredResults,
             hasMore,
-            nextOffset: offset + limit
-    });
+            nextPage: hasMore ? page + 1 : null
+        });
+
+        // res.status(200).json(filteredResults);
+
+        
     } catch (error) {
         console.error('Error:', error);
         res.status(500).json({ error: 'Internal Server Error' });
@@ -84,14 +93,20 @@ module.exports.searchByCategory = async (req, res) => {
         const clientData = await redisClientDatabase();
         
         const { category } = req.query;
-        let { limit = 5, offset = 0 } = req.query;
+        let { page = 1 } = req.query;
     
-        if (!category || !limit || !offset) {
-            return res.status(400).send('Missing required query (category, limit, offset)');
+        if (!category || !page) {
+            return res.status(400).send('Missing required query (category, page)');
         }
         
-        limit = parseInt(limit, 10);
-        offset = parseInt(offset, 10);
+        limit = parseInt(30, 10);
+        page = parseInt(page, 10);
+
+        if (isNaN(limit) || isNaN(page) || page < 1) {
+            return res.status(400).send('Invalid limit or page number');
+        }
+        
+        const offset = (page - 1) * limit;
     
         if (!['cosplay', 'hiking'].includes(category)) {
             return res.status(400).json({ error: 'Invalid category' });
@@ -121,7 +136,7 @@ module.exports.searchByCategory = async (req, res) => {
         res.status(200).json({ 
             results: filteredResults,
             hasMore,
-            nextOffset: offset + limit
+            nextPage: hasMore ? page + 1 : null
         });
     } catch (error) {
         res.status(500).json({ error: error.message });
