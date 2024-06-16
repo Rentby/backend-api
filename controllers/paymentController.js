@@ -32,7 +32,7 @@ module.exports.createTransaction = async (req, res) => {
             first_name: name,
             last_name: "",
             email: email,
-            phone: ""
+            phone: "82313123123"
         },
         item_details: [
             {
@@ -44,10 +44,12 @@ module.exports.createTransaction = async (req, res) => {
             }
         ],
     };
+   
     snap.createTransaction(parameter)
         .then((transaction) => {
         res.status(201).json({ token: transaction.token, orderId: parameter.transaction_details.order_id });
     });
+
 };
 
 // Create new order
