@@ -13,31 +13,6 @@ const snap = new midtransClient.Snap({
     serverKey: MIDTRANS_SERVER_KEY
 });
 
-// Get Order Status by orderId
-module.exports.getOrderStatus = async (req, res) => {
-    try {
-        const { orderId } = req.params;
-        const url = `https://api.sandbox.midtrans.com/v2/${orderId}/status`;
-        if (!orderId) {
-            return res.status(400).json({ error: 'Missing required params (orderId)' });
-        }
-
-        const response = await axios.get(url, {
-            headers: {
-                'Authorization': `Basic ${Buffer.from(MIDTRANS_SERVER_KEY + ':').toString('base64')}`,
-                'Content-Type': 'application/json'
-            }
-        });
-        res.status(200).json(response.data);
-    } catch (error) {
-        console.error(error);
-        res.status(error.response ? error.response.status : 500).json({
-            message: 'Error fetching order status',
-            error: error.message
-        });
-    }
-};
-
 // Create Transaction Token using Midtrans
 module.exports.createTransaction = async (req, res) => {
     const {name, price, product, email} = req.body
@@ -157,48 +132,6 @@ module.exports.postOrder = async (req, res) => {
         await db.collection('payment-data').doc(order_id).set(paymentData);
         await db.collection('order-product-list').doc(uid).set(activeOrder);
         res.status(201).json({ id: order_id });
-    } catch (error) {
-        console.error('Error:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
-    }
-  };
-
-// Get Order Details by id
-module.exports.getOrder = async (req, res) => {
-    try {
-        const { id } = req.params;
-        if (!id ) {
-            return res.status(400).json({ error: 'Missing required params (id)' });
-        }
-
-        const doc = await db.collection('payment-data').doc(id).get();
-        if (!doc.exists) {
-            return res.status(404).json({ error: 'Product not found' });
-        }
-        const dataProduct = doc.data();
-    
-        res.status(201).json(dataProduct);
-    } catch (error) {
-        console.error('Error:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
-    }
-};
-
-// Get Booked Date by product id
-module.exports.getBookedDate = async (req, res) => {
-    try {
-        const { id } = req.params;
-        if (!id ) {
-            return res.status(400).json({ error: 'Missing required params (id)' });
-        }
-
-        const snapshot = await db.collection("order-product-list").where("user_id", "==", id).get()
-        const items = [];
-        snapshot.forEach(doc => {
-          items.push(doc.data());
-        });
-
-        res.status(201).json(items);
     } catch (error) {
         console.error('Error:', error);
         res.status(500).json({ error: 'Internal Server Error' });
