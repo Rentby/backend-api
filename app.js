@@ -12,7 +12,7 @@ const machineLearningRoutes = require('./routes/machineLearningRoutes');
 const rateLimit = require('express-rate-limit');
 const limiter = rateLimit({
   windowMs: 5 * 60 * 1000, // In 5 Minutes
-  max: 1000, // Max 1000 Response
+  max: 5000, // Max 5000 Response
 });
 
 const app = express();
