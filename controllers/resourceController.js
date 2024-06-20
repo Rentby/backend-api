@@ -383,8 +383,8 @@ module.exports.getOrder = async (req, res) => {
       const currentTimestamp = Timestamp.now();
       const differenceInMilliseconds = currentTimestamp.toMillis() - dataProduct.rent_end.toMillis();
       const differenceInDays = Math.ceil(differenceInMilliseconds / (1000 * 60 * 60 * 24));
-      dataProduct.late_duration = differenceInDays
-      dataProduct.late_charge = differenceInDays * dataProduct.rent_price
+      dataProduct.late_duration = differenceInDays.toString();
+      dataProduct.late_charge = (differenceInDays * dataProduct.rent_price).toString();
 
       await docOrder.set(dataProduct)
     }
