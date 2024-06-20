@@ -4,7 +4,8 @@ const { redisClientSearch, redisClientDatabase } = require('../config/redisConfi
 module.exports.searchBar = async (req, res) => {
     try {
         const clientSearch = await redisClientSearch();
-    
+        await clientSearch.connect()
+
         const { query, limit } = req.query;
         if (!query || !limit) {
           return res.status(400).send('Missing required query (query, limit)');
@@ -21,8 +22,8 @@ module.exports.searchBar = async (req, res) => {
             return rest;
         })
 
-        clientSearch.disconnect()
         res.status(200).json(filteredResults);
+        await clientSearch.quit()
     } catch (err) {
       console.error('Error searching items: ', err);
       res.status(500).send('Internal Server Error');
@@ -33,6 +34,7 @@ module.exports.searchBar = async (req, res) => {
 module.exports.getSearch = async (req, res) => { 
     try {
         const clientData = await redisClientDatabase();
+        await clientData.connect();
         
         const { query } = req.query;
         let { page = 1 } = req.query;
@@ -41,7 +43,7 @@ module.exports.getSearch = async (req, res) => {
             return res.status(400).send('Missing required query (query, page)');
         }
     
-        limit = parseInt(30, 10);
+        limit = parseInt(50, 10);
         page = parseInt(page, 10);
 
         if (isNaN(limit) || isNaN(page) || page < 1) {
@@ -69,18 +71,16 @@ module.exports.getSearch = async (req, res) => {
             };
         });
         
-        clientData.disconnect()
         const hasMore = results.total > offset + limit;
-
+        
         res.status(200).json({ 
             results: filteredResults,
             hasMore,
             nextPage: hasMore ? page + 1 : null
         });
-
-        // res.status(200).json(filteredResults);
-
         
+        await clientData.quit();
+
     } catch (error) {
         console.error('Error:', error);
         res.status(500).json({ error: 'Internal Server Error' });
@@ -91,6 +91,7 @@ module.exports.getSearch = async (req, res) => {
 module.exports.searchByCategory = async (req, res) => {  
     try {
         const clientData = await redisClientDatabase();
+        await clientData.connect();
         
         const { category } = req.query;
         let { page = 1 } = req.query;
@@ -99,7 +100,7 @@ module.exports.searchByCategory = async (req, res) => {
             return res.status(400).send('Missing required query (category, page)');
         }
         
-        limit = parseInt(30, 10);
+        limit = parseInt(50, 10);
         page = parseInt(page, 10);
 
         if (isNaN(limit) || isNaN(page) || page < 1) {
@@ -138,6 +139,8 @@ module.exports.searchByCategory = async (req, res) => {
             hasMore,
             nextPage: hasMore ? page + 1 : null
         });
+        
+        await clientData.quit();
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
