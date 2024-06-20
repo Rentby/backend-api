@@ -18,7 +18,6 @@ This is a backend project built with Node.js, Express and redis. It is deployed 
 - [Node.js (v20 or higher)](https://nodejs.org/en)
 - [npm](https://www.npmjs.com/)
 - [Git](https://git-scm.com/)
-- [Git](https://git-scm.com/)
 - [Google Cloud SDK](https://cloud.google.com/sdk?hl=en)
 - [redis](https://redis.io/)
 
