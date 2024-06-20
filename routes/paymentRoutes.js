@@ -5,8 +5,8 @@ const checkApiKey = require('../middleware/checkApiKey');
 
 
 // Payment API
-router.post('/create-transaction', checkApiKey, paymentController.createTransaction);
-router.post('/order', checkApiKey, paymentController.postOrder);
+router.post('/order', checkApiKey, paymentController.createTransaction);
+router.get('/order-midtrans/:order_id', checkApiKey, paymentController.getOrderFromMidtrans);
 
 
 
